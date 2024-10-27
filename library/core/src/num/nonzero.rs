@@ -2229,3 +2229,51 @@ nonzero_integer! {
     nonzero_check!(u128, core::num::NonZeroU128, nonzero_check_new_unchecked_for_u128);
     nonzero_check!(usize, core::num::NonZeroUsize, nonzero_check_new_unchecked_for_usize);
 }
+
+#[cfg(kani)]
+#[kani::proof]
+//#[kani::stub_verified(new_unchecked)]
+/*
+遇到错误
+error: Failed to resolve replacement function new_unchecked: unable to find `new_unchecked` inside module `num::nonzero`
+    --> /Users/admin0/Documents/GitHub/verify-rust-std/library/core/src/num/nonzero.rs:2235:1
+     |
+2235 | #[kani::stub_verified(new_unchecked)]
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = note: this error originates in the attribute macro `kani::stub_verified` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: aborting due to 1 previous error
+*/
+pub fn nonzero_check_clamp() {
+    // 生成任意的非零 u32 值
+    let value = kani::any::<u32>();
+    let min = kani::any::<u32>();
+    let max = kani::any::<u32>();
+
+    // 假设 value, min, max 都不为 0, 且 min <= max
+    kani::assume(value != 0);
+    kani::assume(min != 0);
+    kani::assume(max != 0);
+    kani::assume(min <= max);
+
+    // 创建 NonZeroU32 实例
+    let value_nz = unsafe { NonZeroU32::new_unchecked(value) };
+    let min_nz = unsafe { NonZeroU32::new_unchecked(min) };
+    let max_nz = unsafe { NonZeroU32::new_unchecked(max) };
+
+    // 调用 clamp 方法
+    let clamped_value = value_nz.clamp(min_nz, max_nz);
+
+    // 验证结果不为 0
+    assert!(clamped_value.get() != 0);
+
+    // 验证 clamped_value 在 min 和 max 之间
+    if value_nz < min_nz {
+        assert_eq!(clamped_value, min_nz);
+    } else if value_nz > max_nz {
+        assert_eq!(clamped_value, max_nz);
+    } else {
+        assert_eq!(clamped_value, value_nz);
+    }
+}
