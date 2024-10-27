@@ -2256,6 +2256,7 @@ pub fn nonzero_check_clamp() {
     kani::assume(min != 0);
     kani::assume(max != 0);
     kani::assume(min <= max);
+    //应不应该使用这些assume, 还是允许出现报错的情况, 然后再让程序处理?
 
     // 创建 NonZeroU32 实例
     let value_nz = unsafe { NonZeroU32::new_unchecked(value) };
