@@ -2232,24 +2232,21 @@ nonzero_integer! {
 
 #[cfg(kani)]
 #[kani::proof]
-//#[kani::stub_verified(new_unchecked)]
+//#[kani::stub_verified(NonZero::<u32>::new_unchecked)]
 /*
 遇到错误
-error: Failed to resolve replacement function new_unchecked: unable to find `new_unchecked` inside module `num::nonzero`
-    --> /Users/admin0/Documents/GitHub/verify-rust-std/library/core/src/num/nonzero.rs:2235:1
-     |
-2235 | #[kani::stub_verified(new_unchecked)]
-     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-     |
-     = note: this error originates in the attribute macro `kani::stub_verified` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error: aborting due to 1 previous error
+Unwinding loop _RINvXs2U_NtNtCs2tU9I8u06N6_4core5slice4iterINtB7_4IterhENtNtNtNtBb_4iter6traits8iterator8Iterator3allNCNCNvMsc_NtNtBb_3num7nonzeroINtB1L_7NonZeromE13new_uncheckeds_00EBb_.0 iteration 4 file /Users/admin0/Documents/GitHub/verify-rust-std/library/core/src/slice/iter/macros.rs line 267 column 17 function <slice::iter::Iter<'_, u8> as iter::traits::iterator::Iterator>::all::<{closure@/Users/admin0/Documents/GitHub/verify-rust-std/library/core/src/num/nonzero.rs:375:27: 375:34}> thread 0
+Unwinding recursion kani::any::<num::nonzero::NonZero<u32>> iteration 1318
+Unwinding recursion <num::nonzero::NonZero<u32> as kani::Arbitrary>::any iteration 1318
+Unwinding recursion num::nonzero::NonZero::<u32>::new_unchecked iteration 1319
+Unwinding recursion num::nonzero::NonZero::<T>::new_unchecked::kani_register_contract::<num::nonzero::NonZero<u32>, {closure@/Users/admin0/Documents/GitHub/verify-rust-std/library/core/src/num/nonzero.rs:371:5: 376:8}> iteration 1319
+Unwinding recursion <{closure@/Users/admin0/Documents/GitHub/verify-rust-std/library/core/src/num/nonzero.rs:371:5: 376:8} as ops::function::FnOnce<()>>::call_once iteration 1319
 */
-pub fn nonzero_check_clamp() {
+pub fn nonzero_check_clamp_for_u32() {
     // 生成任意的非零 u32 值
-    let value = kani::any::<u32>();
-    let min = kani::any::<u32>();
-    let max = kani::any::<u32>();
+    let value: u32 = kani::any();
+    let min: u32 = kani::any();
+    let max: u32 = kani::any();
 
     // 假设 value, min, max 都不为 0, 且 min <= max
     kani::assume(value != 0);
