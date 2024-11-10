@@ -2232,7 +2232,7 @@ nonzero_integer! {
 
 #[cfg(kani)]
 #[kani::proof]
-//#[kani::stub_verified(NonZero::<u32>::new_unchecked)]
+#[kani::stub_verified(NonZero::<u32>::new_unchecked)]
 /*
 遇到错误
 Unwinding loop _RINvXs2U_NtNtCs2tU9I8u06N6_4core5slice4iterINtB7_4IterhENtNtNtNtBb_4iter6traits8iterator8Iterator3allNCNCNvMsc_NtNtBb_3num7nonzeroINtB1L_7NonZeromE13new_uncheckeds_00EBb_.0 iteration 4 file /Users/admin0/Documents/GitHub/verify-rust-std/library/core/src/slice/iter/macros.rs line 267 column 17 function <slice::iter::Iter<'_, u8> as iter::traits::iterator::Iterator>::all::<{closure@/Users/admin0/Documents/GitHub/verify-rust-std/library/core/src/num/nonzero.rs:375:27: 375:34}> thread 0

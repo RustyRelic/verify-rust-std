@@ -50,3 +50,7 @@ package-lock.json
 # already existing elements were commented out
 
 #/target
+
+*
+!.gitignore
+!library/core/src/num/nonzero.rs
