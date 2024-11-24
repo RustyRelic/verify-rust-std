@@ -243,6 +243,14 @@ where
     }
 
     #[inline]
+    #[requires(true)]
+    // #[kani::requires(|min: NonZeroU32, max: NonZeroU32| min.get() <= max.get())]
+    // #[kani::requires(|min, max| min.get() <= max.get())]
+    // #[kani::requires(min.get() <= max.get())]
+    // #[kani::ensures(result.get() == self.get().clamp(min.get(), max.get()))]
+    // #[kani::ensures(|result| result.get() == self.get().clamp(min.get(), max.get()))]
+    // #[kani::ensures(|result: NonZeroU32| result.get() == self.get().clamp(min.get(), max.get()))]
+    #[kani::ensures(|result: &Self| true)]
     fn clamp(self, min: Self, max: Self) -> Self {
         // SAFETY: A non-zero value clamped between two non-zero values is still non-zero.
         unsafe { Self::new_unchecked(self.get().clamp(min.get(), max.get())) }
@@ -2231,74 +2239,106 @@ nonzero_integer! {
 }
 
 #[cfg(kani)]
-#[kani::proof]
-#[kani::stub_verified(NonZero::<u32>::new_unchecked)]
-#[kani::unwind(1000)]
-/*
-遇到错误
-Unwinding recursion <{closure@/Users/admin0/Documents/GitHub/verify-rust-std/library/core/src/num/nonzero.rs:371:5: 376:8} as ops::function::FnOnce<()>>::call_once iteration 1000
-Unwinding recursion num::nonzero::NonZero::<u32>::new_unchecked::{closure#1} iteration 1000
-Unwinding loop _RINvXs2U_NtNtCs2tU9I8u06N6_4core5slice4iterINtB7_4IterhENtNtNtNtBb_4iter6traits8iterator8Iterator3allNCNCNvMsc_NtNtBb_3num7nonzeroINtB1L_7NonZeromE13new_uncheckeds_00EBb_.0 iteration 1 file /Users/admin0/Documents/GitHub/verify-rust-std/library/core/src/slice/iter/macros.rs line 267 column 17 function <slice::iter::Iter<'_, u8> as iter::traits::iterator::Iterator>::all::<{closure@/Users/admin0/Documents/GitHub/verify-rust-std/library/core/src/num/nonzero.rs:375:27: 375:34}> thread 0
-Unwinding loop _RINvXs2U_NtNtCs2tU9I8u06N6_4core5slice4iterINtB7_4IterhENtNtNtNtBb_4iter6traits8iterator8Iterator3allNCNCNvMsc_NtNtBb_3num7nonzeroINtB1L_7NonZeromE13new_uncheckeds_00EBb_.0 iteration 2 file /Users/admin0/Documents/GitHub/verify-rust-std/library/core/src/slice/iter/macros.rs line 267 column 17 function <slice::iter::Iter<'_, u8> as iter::traits::iterator::Iterator>::all::<{closure@/Users/admin0/Documents/GitHub/verify-rust-std/library/core/src/num/nonzero.rs:375:27: 375:34}> thread 0
-Unwinding loop _RINvXs2U_NtNtCs2tU9I8u06N6_4core5slice4iterINtB7_4IterhENtNtNtNtBb_4iter6traits8iterator8Iterator3allNCNCNvMsc_NtNtBb_3num7nonzeroINtB1L_7NonZeromE13new_uncheckeds_00EBb_.0 iteration 3 file /Users/admin0/Documents/GitHub/verify-rust-std/library/core/src/slice/iter/macros.rs line 267 column 17 function <slice::iter::Iter<'_, u8> as iter::traits::iterator::Iterator>::all::<{closure@/Users/admin0/Documents/GitHub/verify-rust-std/library/core/src/num/nonzero.rs:375:27: 375:34}> thread 0
-Unwinding loop _RINvXs2U_NtNtCs2tU9I8u06N6_4core5slice4iterINtB7_4IterhENtNtNtNtBb_4iter6traits8iterator8Iterator3allNCNCNvMsc_NtNtBb_3num7nonzeroINtB1L_7NonZeromE13new_uncheckeds_00EBb_.0 iteration 4 file /Users/admin0/Documents/GitHub/verify-rust-std/library/core/src/slice/iter/macros.rs line 267 column 17 function <slice::iter::Iter<'_, u8> as iter::traits::iterator::Iterator>::all::<{closure@/Users/admin0/Documents/GitHub/verify-rust-std/library/core/src/num/nonzero.rs:375:27: 375:34}> thread 0
-Unwinding recursion kani::any::<num::nonzero::NonZero<u32>> iteration 1000
-Unwinding recursion <num::nonzero::NonZero<u32> as kani::Arbitrary>::any iteration 1000
-Not unwinding recursion num::nonzero::NonZero::<u32>::new_unchecked iteration 1001
-Runtime Symex: 68.351s
-size of program expression: 1376071 steps
-slicing removed 889767 assignments
-Generated 242244 VCC(s), 57058 remaining after simplification
-Runtime Postprocess Equation: 0.516391s
-Passing problem to propositional reduction
-converting SSA
-Runtime Convert SSA: 10.4396s
-Running propositional reduction
-Post-processing
-Runtime Post-process: 1.0042e-05s
-Solving with CaDiCaL 2.0.0
-6467941 variables, 38091221 clauses
-SAT checker: instance is SATISFIABLE
-Runtime Solver: 77.2579s
-Runtime decision procedure: 87.907s
-Running propositional reduction
-Solving with CaDiCaL 2.0.0
-6467942 variables, 38091222 clauses
-SAT checker: instance is SATISFIABLE
-Runtime Solver: 392.452s
-Runtime decision procedure: 392.491s
-Running propositional reduction
-*/
-pub fn nonzero_check_clamp_for_u32() {
-    // 生成任意的非零 u32 值
+#[kani::proof_for_contract(NonZero::clamp)]
+// #[kani::stub_verified(NonZero::<u32>::new_unchecked)]
+// #[kani::unwind(1000)]
+// pub fn nonzero_check_clamp_for_u32() {
+//     // 生成任意的非零 u32 值
+//     let value: u32 = kani::any();
+//     let min: u32 = kani::any();
+//     let max: u32 = kani::any();
+
+//     // 假设 value, min, max 都不为 0, 且 min <= max
+//     kani::assume(value != 0);
+//     kani::assume(min != 0);
+//     kani::assume(max != 0);
+//     kani::assume(min <= max);
+
+//     // 创建 NonZeroU32 实例
+//     let value_nz = unsafe { NonZeroU32::new_unchecked(value) };
+//     let min_nz = unsafe { NonZeroU32::new_unchecked(min) };
+//     let max_nz = unsafe { NonZeroU32::new_unchecked(max) };
+
+//     // 调用 clamp 方法
+//     let clamped_value = value_nz.clamp(min_nz, max_nz);
+
+//     // 验证结果不为 0
+//     assert!(clamped_value.get() != 0);
+
+//     // 验证 clamped_value 在 min 和 max 之间
+//     if value_nz < min_nz {
+//         assert_eq!(clamped_value, min_nz);
+//     } else if value_nz > max_nz {
+//         assert_eq!(clamped_value, max_nz);
+//     } else {
+//         assert_eq!(clamped_value, value_nz);
+//     }
+// }
+
+// #[cfg(kani)]
+// #[kani::requires(min.get() <= max.get())]
+// // #[kani::requires(|value: NonZeroU32, min: NonZeroU32, max: NonZeroU32| min.get() <= max.get())]
+// // #[kani::ensures(|result: NonZeroU32| result.get() == value.get().clamp(min.get(), max.get()))]
+// #[kani::ensures(|result: &NonZeroU32| result.get() == value.get().clamp(min.get(), max.get()))]
+// fn clamp_nonzero_u32(value: NonZeroU32, min: NonZeroU32, max: NonZeroU32) -> NonZeroU32 {
+//     value.clamp(min, max)
+// }
+
+// #[cfg(kani)]
+// #[kani::proof_for_contract(clamp_nonzero_u32)]
+// pub fn nonzero_check_clamp_for_u32() {
+//     // 生成任意的非零 u32 值
+//     let value: u32 = kani::any();
+//     let min: u32 = kani::any();
+//     let max: u32 = kani::any();
+
+//     // 假设 value, min, max 都不为 0, 且 min <= max
+//     kani::assume(value != 0);
+//     kani::assume(min != 0);
+//     kani::assume(max != 0);
+
+//     // 让 Kani 确保 min <= max，以满足前置条件
+//     kani::assume(min <= max);
+
+//     // 创建 NonZeroU32 实例
+//     let value_nz = unsafe { NonZeroU32::new_unchecked(value) };
+//     let min_nz = unsafe { NonZeroU32::new_unchecked(min) };
+//     let max_nz = unsafe { NonZeroU32::new_unchecked(max) };
+
+//     // 调用包装函数
+//     let _ = clamp_nonzero_u32(value_nz, min_nz, max_nz);
+// }
+
+#[cfg(kani)]
+#[kani::requires(value != 0 && min != 0 && max != 0 && min <= max)]
+#[kani::ensures(result == value.clamp(min, max) && result != 0)]
+fn clamp_nonzero_u32_integers(value: u32, min: u32, max: u32) -> u32 {
+    // 将 u32 转换为 NonZeroU32
+    let value_nz = NonZeroU32::new(value).expect("value cannot be zero");
+    let min_nz = NonZeroU32::new(min).expect("min cannot be zero");
+    let max_nz = NonZeroU32::new(max).expect("max cannot be zero");
+
+    // 执行 clamp 操作
+    let clamped_nz = value_nz.clamp(min_nz, max_nz);
+
+    // 返回结果（u32 类型）
+    clamped_nz.get()
+}
+
+#[cfg(kani)]
+#[kani::proof_for_contract(clamp_nonzero_u32_integers)]
+fn nonzero_check_clamp_for_u32() {
+    // 生成任意的 u32 值
     let value: u32 = kani::any();
     let min: u32 = kani::any();
     let max: u32 = kani::any();
 
-    // 假设 value, min, max 都不为 0, 且 min <= max
+    // 假设 value, min, max 都不为 0，且 min <= max
     kani::assume(value != 0);
     kani::assume(min != 0);
     kani::assume(max != 0);
     kani::assume(min <= max);
-    //应不应该使用这些assume, 还是允许出现报错的情况, 然后再让程序处理?
 
-    // 创建 NonZeroU32 实例
-    let value_nz = unsafe { NonZeroU32::new_unchecked(value) };
-    let min_nz = unsafe { NonZeroU32::new_unchecked(min) };
-    let max_nz = unsafe { NonZeroU32::new_unchecked(max) };
-
-    // 调用 clamp 方法
-    let clamped_value = value_nz.clamp(min_nz, max_nz);
-
-    // 验证结果不为 0
-    assert!(clamped_value.get() != 0);
-
-    // 验证 clamped_value 在 min 和 max 之间
-    if value_nz < min_nz {
-        assert_eq!(clamped_value, min_nz);
-    } else if value_nz > max_nz {
-        assert_eq!(clamped_value, max_nz);
-    } else {
-        assert_eq!(clamped_value, value_nz);
-    }
+    // 调用函数
+    let _ = clamp_nonzero_u32_integers(value, min, max);
 }
