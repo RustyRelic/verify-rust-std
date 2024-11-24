@@ -243,14 +243,6 @@ where
     }
 
     #[inline]
-    #[requires(true)]
-    // #[kani::requires(|min: NonZeroU32, max: NonZeroU32| min.get() <= max.get())]
-    // #[kani::requires(|min, max| min.get() <= max.get())]
-    // #[kani::requires(min.get() <= max.get())]
-    // #[kani::ensures(result.get() == self.get().clamp(min.get(), max.get()))]
-    // #[kani::ensures(|result| result.get() == self.get().clamp(min.get(), max.get()))]
-    // #[kani::ensures(|result: NonZeroU32| result.get() == self.get().clamp(min.get(), max.get()))]
-    #[kani::ensures(|result: &Self| true)]
     fn clamp(self, min: Self, max: Self) -> Self {
         // SAFETY: A non-zero value clamped between two non-zero values is still non-zero.
         unsafe { Self::new_unchecked(self.get().clamp(min.get(), max.get())) }
