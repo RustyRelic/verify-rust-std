@@ -2197,7 +2197,7 @@ nonzero_integer! {
 
 #[unstable(feature="kani", issue="none")]
 #[cfg(kani)]
-    mod verify {
+mod verify {
     use core::num::NonZeroI32; // Use core::num instead of std::num
     use super::*;
     use NonZero;
@@ -2231,26 +2231,45 @@ nonzero_integer! {
 }
 
 #[cfg(kani)]
-#[kani::proof]
-pub fn nonzero_check_cmp() {
-    let x: i32 = kani::any();
-    kani::assume(x != 0);
-    
-    
-    let y: i32 = kani::any();
-    kani::assume(y != 0);
-
-    unsafe {
-        let x = NonZeroI32::new_unchecked(x);
-        let y = NonZeroI32::new_unchecked(y);
+mod macro_nonzero_check_cmp {
+    use super::*;
+    macro_rules! nonzero_check_cmp {
+        ($t:ty, $nonzero_type:ty, $nonzero_check_cmp_for:ident) => {
+            #[kani::proof]
+            pub fn $nonzero_check_cmp_for() {
+                let x: $t = kani::any();
+                kani::assume(x != 0);
+                let y: $t = kani::any();
+                kani::assume(y != 0);
+            
+                unsafe {
+                    let x = <$nonzero_type>::new_unchecked(x);
+                    let y = <$nonzero_type>::new_unchecked(y);
+                }
+            
+            
+                if (x < y) {
+                    assert!(x.cmp(&y) == core::cmp::Ordering::Less);
+                } else if (x > y) {
+                    assert!(x.cmp(&y) == core::cmp::Ordering::Greater);
+                } else {
+                    assert!(x.cmp(&y) == core::cmp::Ordering::Equal);
+                }
+            }
+        };
     }
 
-
-    if (x < y) {
-        assert!(x.cmp(&y) == core::cmp::Ordering::Less);
-    } else if (x > y) {
-        assert!(x.cmp(&y) == core::cmp::Ordering::Greater);
-    } else {
-        assert!(x.cmp(&y) == core::cmp::Ordering::Equal);
-    }
+    // Use the macro to generate different versions of the function for multiple types
+    nonzero_check_cmp!(i8, core::num::NonZeroI8, nonzero_check_new_unchecked_for_i8);
+    nonzero_check_cmp!(i16, core::num::NonZeroI16, nonzero_check_new_unchecked_for_16);
+    nonzero_check_cmp!(i32, core::num::NonZeroI32, nonzero_check_new_unchecked_for_32);
+    nonzero_check_cmp!(i64, core::num::NonZeroI64, nonzero_check_new_unchecked_for_64);
+    nonzero_check_cmp!(i128, core::num::NonZeroI128, nonzero_check_new_unchecked_for_128);
+    nonzero_check_cmp!(isize, core::num::NonZeroIsize, nonzero_check_new_unchecked_for_isize);
+    nonzero_check_cmp!(u8, core::num::NonZeroU8, nonzero_check_new_unchecked_for_u8);
+    nonzero_check_cmp!(u16, core::num::NonZeroU16, nonzero_check_new_unchecked_for_u16);
+    nonzero_check_cmp!(u32, core::num::NonZeroU32, nonzero_check_new_unchecked_for_u32);
+    nonzero_check_cmp!(u64, core::num::NonZeroU64, nonzero_check_new_unchecked_for_u64);
+    nonzero_check_cmp!(u128, core::num::NonZeroU128, nonzero_check_new_unchecked_for_u128);
+    nonzero_check_cmp!(usize, core::num::NonZeroUsize, nonzero_check_new_unchecked_for_usize);
 }
