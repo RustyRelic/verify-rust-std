@@ -2230,3 +2230,27 @@ nonzero_integer! {
     nonzero_check!(usize, core::num::NonZeroUsize, nonzero_check_new_unchecked_for_usize);
 }
 
+#[cfg(kani)]
+#[kani::proof]
+pub fn nonzero_check_cmp() {
+    let x: i32 = kani::any();
+    kani::assume(x != 0);
+    
+    
+    let y: i32 = kani::any();
+    kani::assume(y != 0);
+
+    unsafe {
+        let x = NonZeroI32::new_unchecked(x);
+        let y = NonZeroI32::new_unchecked(y);
+    }
+
+
+    if (x < y) {
+        assert!(x.cmp(&y) == core::cmp::Ordering::Less);
+    } else if (x > y) {
+        assert!(x.cmp(&y) == core::cmp::Ordering::Greater);
+    } else {
+        assert!(x.cmp(&y) == core::cmp::Ordering::Equal);
+    }
+}
