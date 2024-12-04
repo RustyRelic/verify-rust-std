@@ -427,6 +427,21 @@ where
     #[unstable(feature = "nonzero_from_mut", issue = "106290")]
     #[must_use]
     #[inline]
+    #[requires({
+        let size = core::mem::size_of::<T>();
+        let ptr = n as *const T as *const u8; // Corrected to use `n` directly
+        let slice = unsafe { core::slice::from_raw_parts(ptr, size) };
+        !slice.iter().all(|&byte| byte == 0)
+    })]
+    #[ensures(|result: &&mut Self| {
+        let size = core::mem::size_of::<T>();
+        let n_ptr: *const T = n as *const T; // Corrected to cast `n` directly
+        let result_inner: T = result.get();
+        let result_ptr: *const T = &result_inner;
+        let n_slice = unsafe { core::slice::from_raw_parts(n_ptr as *const u8, size) };
+        let result_slice = unsafe { core::slice::from_raw_parts(result_ptr as *const u8, size) };
+        n_slice == result_slice
+    })] 
     pub unsafe fn from_mut_unchecked(n: &mut T) -> &mut Self {
         match Self::from_mut(n) {
             Some(n) => n,
@@ -1010,7 +1025,7 @@ macro_rules! nonzero_integer {
                           without modifying the original"]
             #[inline]
             #[requires({
-                !self.get().checked_mul(other.get()).is_some()
+                self.get().checked_mul(other.get()).is_some()
             })]
             #[ensures(|result: &Self| {
                 self.get().checked_mul(other.get()).unwrap() == result.get()
@@ -1378,7 +1393,7 @@ macro_rules! nonzero_integer_signedness_dependent_methods {
                       without modifying the original"]
         #[inline]
         #[requires({
-            !self.get().checked_add(other).is_some()
+            self.get().checked_add(other).is_some()
         })]
         #[ensures(|result: &Self| {
             // Postcondition: the result matches the expected addition
@@ -2228,57 +2243,173 @@ mod verify {
     nonzero_check!(u128, core::num::NonZeroU128, nonzero_check_new_unchecked_for_u128);
     nonzero_check!(usize, core::num::NonZeroUsize, nonzero_check_new_unchecked_for_usize);
 
-    macro_rules! nonzero_check_mul {
-        ($t:ty, $nonzero_type:ty, $nonzero_unchecked_mul:ident) => {
-            #[kani::proof_for_contract(NonZero::unchecked_mul)]
-            pub fn $nonzero_unchecked_mul_for() {
-                let x: NonZeroI8 = kani::any();
-                let y: NonZeroI8 = kani::any();
+    /*macro_rules! nonzero_check_mut {
+        ($t:ty, $nonzero_type:ty, $nonzero_check_mut_for:ident) => {
+            #[kani::proof_for_contract(NonZero::from_mut_unchecked)]
+            pub fn $nonzero_check_mut_for() {
+                let mut x: $t = kani::any(); 
                 unsafe {
-                    let _ = x.unchecked_mul(y); 
+                    <$nonzero_type>::from_mut_unchecked(&mut x);
                 }
             }
         };
     }
     
     // Use the macro to generate different versions of the function for multiple types
-    nonzero_check!(i8, core::num::NonZeroI8, nonzero_unchecked_mul_for_i8);
-    nonzero_check!(i16, core::num::NonZeroI16, nonzero_unchecked_mul_for_16);
-    nonzero_check!(i32, core::num::NonZeroI32, nonzero_unchecked_mul_for_32);
-    nonzero_check!(i64, core::num::NonZeroI64, nonzero_unchecked_mul_for_64);
-    nonzero_check!(i128, core::num::NonZeroI128, nonzero_unchecked_mul_for_128);
-    nonzero_check!(isize, core::num::NonZeroIsize, nonzero_unchecked_mul_for_isize);
-    nonzero_check!(u8, core::num::NonZeroU8, nonzero_unchecked_mul_for_u8);
-    nonzero_check!(u16, core::num::NonZeroU16, nonzero_unchecked_mul_for_u16);
-    nonzero_check!(u32, core::num::NonZeroU32, nonzero_unchecked_mul_for_u32);
-    nonzero_check!(u64, core::num::NonZeroU64, nonzero_unchecked_mul_for_u64);
-    nonzero_check!(u128, core::num::NonZeroU128, nonzero_unchecked_mul_for_u128);
-    nonzero_check!(usize, core::num::NonZeroUsize, nonzero_unchecked_mul_for_usize);
+    nonzero_check_mut!(i8, core::num::NonZeroI8, nonzero_check_mut_for_i8);*/
+
+
+    macro_rules! nonzero_check_from_mut_unchecked {
+        ($t:ty, $nonzero_type:ty, $harness_name:ident) => {
+            #[kani::proof_for_contract(NonZero::from_mut_unchecked)]
+            pub fn $harness_name() {
+                let mut x: $t = kani::any();
+                kani::assume(x != 0);
+    
+                unsafe {
+                    let nonzero_ref = <$nonzero_type>::from_mut_unchecked(&mut x);
+                    kani::assert(nonzero_ref.get() == x, "nonzero_ref.get() should equal x");
+                }
+            }
+        };
+    }
+    
+    // Generate harnesses for multiple types
+    nonzero_check_from_mut_unchecked!(i8, core::num::NonZeroI8, nonzero_check_from_mut_unchecked_i8);
+    nonzero_check_from_mut_unchecked!(i16, core::num::NonZeroI16, nonzero_check_from_mut_unchecked_i16);
+    nonzero_check_from_mut_unchecked!(i32, core::num::NonZeroI32, nonzero_check_from_mut_unchecked_i32);
+    nonzero_check_from_mut_unchecked!(i64, core::num::NonZeroI64, nonzero_check_from_mut_unchecked_i64);
+    nonzero_check_from_mut_unchecked!(i128, core::num::NonZeroI128, nonzero_check_from_mut_unchecked_i128);
+    nonzero_check_from_mut_unchecked!(isize, core::num::NonZeroIsize, nonzero_check_from_mut_unchecked_isize);
+    nonzero_check_from_mut_unchecked!(u8, core::num::NonZeroU8, nonzero_check_from_mut_unchecked_u8);
+    nonzero_check_from_mut_unchecked!(u16, core::num::NonZeroU16, nonzero_check_from_mut_unchecked_u16);
+    nonzero_check_from_mut_unchecked!(u32, core::num::NonZeroU32, nonzero_check_from_mut_unchecked_u32);
+    nonzero_check_from_mut_unchecked!(u64, core::num::NonZeroU64, nonzero_check_from_mut_unchecked_u64);
+    nonzero_check_from_mut_unchecked!(u128, core::num::NonZeroU128, nonzero_check_from_mut_unchecked_u128);
+    nonzero_check_from_mut_unchecked!(usize, core::num::NonZeroUsize, nonzero_check_from_mut_unchecked_usize);
+    
+
+    /*macro_rules! nonzero_check_mul {
+        ($t:ty, $nonzero_type:ty, $nonzero_check_unchecked_mul_for:ident) => {
+            #[kani::proof_for_contract(<$nonzero_type>::unchecked_mul)]
+            pub fn $nonzero_check_unchecked_mul_for() {
+                let x: $t = kani::any(); 
+                let y: $t = kani::any();
+
+                let x_inner = x.get();
+                let y_inner = y.get();
+
+                if<$nonzero_type>::MIN < 0{
+                    kani::assume(
+                        x_inner == <$nonzero_type>::MIN
+                        || x_inner == <$nonzero_type>::MAX
+                        || x_inner == -1
+                        || x_inner == 1,
+                    );
+                    kani::assume(
+                        y_inner == <$nonzero_type>::MIN 
+                        || y_inner == <$nonzero_type>::MAX 
+                        || y_inner == -1
+                        || y_inner == 1,
+                    );
+                } else {
+                    // Unsigned type
+                    kani::assume(
+                    x_inner == 1 
+                    || x_inner == <$nonzero_type>::MAX,
+                );
+                kani::assume(
+                    y_inner == 1 
+                    || y_inner == <$nonzero_type>::MAX,
+                );
+                }
+    
+                unsafe {
+                    let _ = x_inner.unchecked_mul(y_inner); // Call unchecked_add with the inner value of y
+                }
+            }
+        };
+    }
+    
+    // Generate proofs for all NonZero types
+    nonzero_check_mul!(core::num::NonZeroI8, i8, nonzero_check_unchecked_mul_for_i8);
+    nonzero_check_mul!(core::num::NonZeroI16, i16, nonzero_check_unchecked_mul_for_i16);
+    nonzero_check_mul!(core::num::NonZeroI32, i32, nonzero_check_unchecked_mul_for_i32);
+    nonzero_check_mul!(core::num::NonZeroI64, i64, nonzero_check_unchecked_mul_for_i64);
+    nonzero_check_mul!(core::num::NonZeroI128, i128, nonzero_check_unchecked_mul_for_i128);
+    nonzero_check_mul!(core::num::NonZeroIsize, isize, nonzero_check_unchecked_mul_for_isize);
+    nonzero_check_mul!(core::num::NonZeroU8, u8, nonzero_check_unchecked_mul_for_u8);
+    nonzero_check_mul!(core::num::NonZeroU16, u16, nonzero_check_unchecked_mul_for_u16);
+    nonzero_check_mul!(core::num::NonZeroU32, u32, nonzero_check_unchecked_mul_for_u32);
+    nonzero_check_mul!(core::num::NonZeroU64, u64, nonzero_check_unchecked_mul_for_u64);
+    nonzero_check_mul!(core::num::NonZeroU128, u128, nonzero_check_unchecked_mul_for_u128);
+    nonzero_check_mul!(core::num::NonZeroUsize, usize, nonzero_check_unchecked_mul_for_usize);*/
+
+
+    macro_rules! check_mul_unchecked_small{
+        ($t:ty, $nonzero_type:ty, $nonzero_check_mul_for:ident) => {
+            #[kani::proof_for_contract(<$t>::unchecked_mul)]
+            pub fn $nonzero_check_mul_for() {
+                let x: $nonzero_type = kani::any();
+                let y: $nonzero_type = kani::any();
+
+                unsafe {
+                    x.unchecked_mul(y);
+                }
+            }
+        };
+    }
+
+    /*macro_rules! check_mul_unchecked_large{
+        ($t:ty, $nonzero_type:ty, $nonzero_check_mul_for:ident) => {
+            #[kani::proof_for_contract(<$t>::unchecked_mul)]
+            pub fn $nonzero_check_mul_for() {
+                let x: $nonzero_type = kani::any();
+                let y: $nonzero_type = kani::any();
+
+                let x_inner = x.get();
+                let y_inner = y.get();
+
+                kani::assert(x_inner < 0, "x_inner should not be zero");
+                kani::assert(y_inner < 0, "y_inner should not be zero");
+                unsafe {
+                    x_inner.unchecked_mul(y_inner);
+                }
+            }
+        };
+    }*/
+
+    check_mul_unchecked_small!(i8, NonZeroI8, nonzero_check_mul_for_i8);
+    check_mul_unchecked_small!(i16, NonZeroI16, nonzero_check_mul_for_i16);
+    check_mul_unchecked_small!(u8, NonZeroU8, nonzero_check_mul_for_u8);
+    check_mul_unchecked_small!(u16, NonZeroU16, nonzero_check_mul_for_u16);
+    //check_mul_unchecked_large!(i16, NonZeroU16, nonzero_check_mul_for_u16);
 
     macro_rules! nonzero_check_add {
-        ($t:ty, $nonzero_type:ty, $nonzero_unchecked_add:ident) => {
-            #[kani::proof_for_contract(NonZero::unchecked_add)]
-                pub fn $nonzero_unchecked_add_for() {
-                let x: i8 = kani::any();
-                let y: i8 = kani::any();
+        ($t:ty, $nonzero_type:ty, $nonzero_check_unchecked_add_for:ident) => {
+            #[kani::proof_for_contract(<$t>::unchecked_add)]
+            pub fn $nonzero_check_unchecked_add_for() {
+                let x: $nonzero_type = kani::any();
+                let y: $nonzero_type = kani::any();
+    
                 unsafe {
-                    let _ = x.unchecked_add(y); // Call the unchecked function
+                    x.get().unchecked_add(y.get());
                 }
             }
         };
     }
     
-    // Use the macro to generate different versions of the function for multiple types
-    nonzero_check!(i8, core::num::NonZeroI8, nonzero_unchecked_add_for_i8);
-    nonzero_check!(i16, core::num::NonZeroI16, nonzero_unchecked_add_for_16);
-    nonzero_check!(i32, core::num::NonZeroI32, nonzero_unchecked_add_for_32);
-    nonzero_check!(i64, core::num::NonZeroI64, nonzero_unchecked_add_for_64);
-    nonzero_check!(i128, core::num::NonZeroI128, nonzero_unchecked_add_for_128);
-    nonzero_check!(isize, core::num::NonZeroIsize, nonzero_unchecked_add_for_isize);
-    nonzero_check!(u8, core::num::NonZeroU8, nonzero_unchecked_add_for_u8);
-    nonzero_check!(u16, core::num::NonZeroU16, nonzero_unchecked_add_for_u16);
-    nonzero_check!(u32, core::num::NonZeroU32, nonzero_unchecked_add_for_u32);
-    nonzero_check!(u64, core::num::NonZeroU64, nonzero_unchecked_add_for_u64);
-    nonzero_check!(u128, core::num::NonZeroU128, nonzero_unchecked_add_for_u128);
-    nonzero_check!(usize, core::num::NonZeroUsize, nonzero_unchecked_add_for_usize);
+    // Generate proofs for all NonZero types
+    nonzero_check_add!(i8, core::num::NonZeroI8, nonzero_check_unchecked_add_for_i8);
+    nonzero_check_add!(i16, core::num::NonZeroI16, nonzero_check_unchecked_add_for_i16);
+    nonzero_check_add!(i32, core::num::NonZeroI32, nonzero_check_unchecked_add_for_i32);
+    nonzero_check_add!(i64, core::num::NonZeroI64, nonzero_check_unchecked_add_for_i64);
+    nonzero_check_add!(i128, core::num::NonZeroI128, nonzero_check_unchecked_add_for_i128);
+    nonzero_check_add!(isize, core::num::NonZeroIsize, nonzero_check_unchecked_add_for_isize);
+    nonzero_check_add!(u8, core::num::NonZeroU8, nonzero_check_unchecked_add_for_u8);
+    nonzero_check_add!(u16, core::num::NonZeroU16, nonzero_check_unchecked_add_for_u16);
+    nonzero_check_add!(u32, core::num::NonZeroU32, nonzero_check_unchecked_add_for_u32);
+    nonzero_check_add!(u64, core::num::NonZeroU64, nonzero_check_unchecked_add_for_u64);
+    nonzero_check_add!(u128, core::num::NonZeroU128, nonzero_check_unchecked_add_for_u128);
+    nonzero_check_add!(usize, core::num::NonZeroUsize, nonzero_check_unchecked_add_for_usize);
 }
